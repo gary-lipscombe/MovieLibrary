@@ -1,0 +1,39 @@
+.button-pick{
+    -fx-background-image: url('../images/play.png');
+    -fx-background-size: 32, 32;
+    -fx-background-repeat: stretch;
+    -fx-background-position: center center;
+
+    -fx-background-color:transparent;
+}
+
+.button-pick:hover{
+    -fx-border-color:gray;
+    -fx-border-width: 1px;
+    -fx-border-radius:3px;
+}
+
+.button-pick:pressed{
+    -fx-background-color:gray;
+    -fx-border-color:gray;
+    -fx-border-width: 1px;
+    -fx-border-radius:3px;
+}
+
+.table-cell{
+    -fx-border-color:gray;
+    -fx-border-width: 0.5px;
+}
+
+.table-row-cell:odd{
+    -fx-background-color: #D8D8D8;
+}
+
+.table-row-cell:focused{
+    -fx-background-color: gray;
+}
+
+.progress{
+
+    -fx-padding:30;
+}

@@ -1,0 +1,98 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project name="module_movielibrary" default="compile.module.movielibrary">
+  <dirname property="module.movielibrary.basedir" file="${ant.file.module_movielibrary}"/>
+  
+  <property name="module.jdk.home.movielibrary" value="${project.jdk.home}"/>
+  <property name="module.jdk.bin.movielibrary" value="${project.jdk.bin}"/>
+  <property name="module.jdk.classpath.movielibrary" value="${project.jdk.classpath}"/>
+  
+  <property name="compiler.args.movielibrary" value="-encoding windows-1252 -source 8 ${compiler.args}"/>
+  
+  <property name="movielibrary.output.dir" value="${module.movielibrary.basedir}/out/production/MovieLibrary"/>
+  <property name="movielibrary.testoutput.dir" value="${module.movielibrary.basedir}/out/test/MovieLibrary"/>
+  
+  <path id="movielibrary.module.bootclasspath">
+    <!-- Paths to be included in compilation bootclasspath -->
+  </path>
+  
+  <path id="movielibrary.module.production.classpath">
+    <path refid="${module.jdk.classpath.movielibrary}"/>
+    <path refid="library.xuggle-xuggler-5.4.classpath"/>
+    <path refid="library.ch.qos.logback:logback-classic:1.0.0.classpath"/>
+    <path refid="library.ch.qos.logback:logback-core:1.0.0.classpath"/>
+    <path refid="library.commons-cli:commons-cli:1.1.classpath"/>
+    <path refid="library.xuggle-utils-1.22.classpath"/>
+  </path>
+  
+  <path id="movielibrary.runtime.production.module.classpath">
+    <pathelement location="${movielibrary.output.dir}"/>
+    <path refid="library.xuggle-xuggler-5.4.classpath"/>
+    <path refid="library.ch.qos.logback:logback-classic:1.0.0.classpath"/>
+    <path refid="library.ch.qos.logback:logback-core:1.0.0.classpath"/>
+    <path refid="library.commons-cli:commons-cli:1.1.classpath"/>
+    <path refid="library.xuggle-utils-1.22.classpath"/>
+  </path>
+  
+  <path id="movielibrary.module.classpath">
+    <path refid="${module.jdk.classpath.movielibrary}"/>
+    <pathelement location="${movielibrary.output.dir}"/>
+    <path refid="library.xuggle-xuggler-5.4.classpath"/>
+    <path refid="library.ch.qos.logback:logback-classic:1.0.0.classpath"/>
+    <path refid="library.ch.qos.logback:logback-core:1.0.0.classpath"/>
+    <path refid="library.commons-cli:commons-cli:1.1.classpath"/>
+    <path refid="library.xuggle-utils-1.22.classpath"/>
+  </path>
+  
+  <path id="movielibrary.runtime.module.classpath">
+    <pathelement location="${movielibrary.testoutput.dir}"/>
+    <pathelement location="${movielibrary.output.dir}"/>
+    <path refid="library.xuggle-xuggler-5.4.classpath"/>
+    <path refid="library.ch.qos.logback:logback-classic:1.0.0.classpath"/>
+    <path refid="library.ch.qos.logback:logback-core:1.0.0.classpath"/>
+    <path refid="library.commons-cli:commons-cli:1.1.classpath"/>
+    <path refid="library.xuggle-utils-1.22.classpath"/>
+  </path>
+  
+  
+  <patternset id="excluded.from.module.movielibrary">
+    <patternset refid="ignored.files"/>
+  </patternset>
+  
+  <patternset id="excluded.from.compilation.movielibrary">
+    <patternset refid="excluded.from.module.movielibrary"/>
+  </patternset>
+  
+  <path id="movielibrary.module.sourcepath">
+    <dirset dir="${module.movielibrary.basedir}">
+      <include name="src"/>
+    </dirset>
+  </path>
+  
+  
+  <target name="compile.module.movielibrary" depends="compile.module.movielibrary.production,compile.module.movielibrary.tests" description="Compile module MovieLibrary"/>
+  
+  <target name="compile.module.movielibrary.production" depends="register.custom.compilers" description="Compile module MovieLibrary; production classes">
+    <mkdir dir="${movielibrary.output.dir}"/>
+    <javac2 destdir="${movielibrary.output.dir}" debug="${compiler.debug}" nowarn="${compiler.generate.no.warnings}" memorymaximumsize="${compiler.max.memory}" fork="true" executable="${module.jdk.bin.movielibrary}/javac">
+      <compilerarg line="${compiler.args.movielibrary}"/>
+      <bootclasspath refid="movielibrary.module.bootclasspath"/>
+      <classpath refid="movielibrary.module.production.classpath"/>
+      <src refid="movielibrary.module.sourcepath"/>
+      <patternset refid="excluded.from.compilation.movielibrary"/>
+    </javac2>
+    
+    <copy todir="${movielibrary.output.dir}">
+      <fileset dir="${module.movielibrary.basedir}/src">
+        <patternset refid="compiler.resources"/>
+        <type type="file"/>
+      </fileset>
+    </copy>
+  </target>
+  
+  <target name="compile.module.movielibrary.tests" depends="register.custom.compilers,compile.module.movielibrary.production" description="compile module MovieLibrary; test classes" unless="skip.tests"/>
+  
+  <target name="clean.module.movielibrary" description="cleanup module">
+    <delete dir="${movielibrary.output.dir}"/>
+    <delete dir="${movielibrary.testoutput.dir}"/>
+  </target>
+</project>
