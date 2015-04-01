@@ -17,7 +17,7 @@ public class Settings {
 
     public static final String SETTINGS_FILE = "settings.ini";
 
-    public static final String DEFAULT_DB_FILE = "movie.db";
+    public static final String DEFAULT_DB_FILE = "movies.db";
 
     private static final String SETTING_DB_LOCATION = "movieDbFile";
     private static final String SETTING_MOVIE_LOCATION = "movieFolder";
@@ -29,8 +29,8 @@ public class Settings {
 
 
     private Settings() {
-        this.settingsMap = new HashMap<String,String>();
-        saveSettings();
+        this.settingsMap = new HashMap<>();
+        setMovieDbFileName(System.getProperty("user.dir") + "/" + DEFAULT_DB_FILE);
     }
 
     public static Settings getInstance(){
@@ -39,14 +39,6 @@ public class Settings {
             settings = (tmp == null)? new Settings(): tmp;
         }
         return settings;
-    }
-
-    public Map<String, String> getSettingsMap() {
-        return settingsMap;
-    }
-
-    public void setSettingsMap(Map<String, String> settingsMap) {
-        this.settingsMap = settingsMap;
     }
 
     public String getMovieDbFileName(){
@@ -58,24 +50,34 @@ public class Settings {
         saveSettings();
     }
 
-    public void saveSettings(){
+    public String getMovieFolder(){
+        return settingsMap.get(SETTING_MOVIE_LOCATION);
+    }
 
-        Gson gson = new Gson();
-        String json = gson.toJson(settings);
-        try (PrintWriter printWriter = new PrintWriter(System.getProperty("user.dir")+"/"+SETTINGS_FILE)) {
-            printWriter.append(json);
-        } catch (FileNotFoundException e) {
-            e.printStackTrace();
+    public void setMovieFolder(String movieFolder){
+        settingsMap.put(SETTING_MOVIE_LOCATION,movieFolder);
+        saveSettings();
+    }
+
+    private void saveSettings(){
+        if(settings!=null) {
+            Gson gson = new Gson();
+            String json = gson.toJson(settings);
+            try (PrintWriter printWriter = new PrintWriter(System.getProperty("user.dir") + "/" + SETTINGS_FILE)) {
+                printWriter.append(json);
+            } catch (FileNotFoundException e) {
+                e.printStackTrace();
+            }
         }
     }
 
-    public static Settings loadSettings(){
+    private static Settings loadSettings(){
         Gson gson = new Gson();
         StringBuilder settingsString = new StringBuilder();
         try {
             Files.readAllLines(Paths.get(System.getProperty("user.dir")+"/"+SETTINGS_FILE)).forEach(settingsString::append);
         } catch (IOException e) {
-            e.printStackTrace();
+            return null;
         }
         return gson.fromJson(settingsString.toString(),Settings.class);
     }

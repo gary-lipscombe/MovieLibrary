@@ -35,6 +35,7 @@
             <ToolBar>
                 <Button styleClass="button-pick" onAction="#onPickPressed" prefWidth="32" prefHeight="32"/>
                 <TextField fx:id="txtFilter" promptText="Filter" disable="true"/>
+                <ProgressIndicator fx:id="progress" visible="false" prefHeight="32"/>
             </ToolBar>
         </VBox>
     </top>

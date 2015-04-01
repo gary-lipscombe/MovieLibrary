@@ -11,10 +11,11 @@ import javafx.concurrent.Task;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
 import javafx.scene.control.*;
-import javafx.scene.control.cell.PropertyValueFactory;
 import javafx.scene.input.MouseEvent;
+import javafx.stage.DirectoryChooser;
 import javafx.util.Callback;
 import main.model.MovieEntry;
+import main.model.Settings;
 import main.utils.DateUtils;
 
 import java.io.File;
@@ -30,79 +31,96 @@ public class Controller {
     @FXML private TableView<MovieEntry> tableMovies;
     @FXML private TextField txtFilter;
     @FXML private TabPane tabMovies;
-
     @FXML private TableColumn<MovieEntry,String> dateColumn;
+    @FXML private ProgressIndicator progress;
 
-    ObservableList<MovieEntry> movieEntries;
+    private ObservableList<MovieEntry> movieEntries;
 
-    private  String tvFolderPath = "L:/TV Shows";
+    private String tvFolderPath = "L:/TV Shows";
     private File tvFolder;
 
     private String movieFolderPath = "L:/Movies/";
     private File movieFolder;
-
-
-
-
-    private List<String> allMovies;
-    private List<String> allMoviePaths;
-
     private List<File> movieFiles;
-    private List<Date> allMovieDateModified;
 
     @FXML
     protected void initialize(){
         movieEntries = tableMovies.getItems();
-        movieFolder = new File(movieFolderPath);
+
+        movieFolderPath = Settings.getInstance().getMovieFolder();
+        if(movieFolderPath==null){
+            selectMovieFolder();
+        }else {
+            movieFolder = new File(movieFolderPath);
+        }
+
+        if(movieFolder!=null) {
+            movieFiles = getMovieFiles(movieFolder);
+
+            progress.setVisible(true);
+
+            // loading the movie durations takes a while, so this is done in a separate thread
+            Thread th = new Thread(new Task<Void>() {
+                @Override
+                protected Void call() throws Exception {
+                    loadMovies();
+                    return null;
+                }
+            });
+            th.setDaemon(true);
+            th.start();
+            addFilter();
+            addDateColumnFormat();
+        }
+
+
+        // start of the tv section
         tvFolder = new File(tvFolderPath);
-
-//        allMovies = getFilesFromFolder(movieFolder);
-//        allMoviePaths = getPathsFromFolder(movieFolder);
-
-        movieFiles = getMovieFiles(movieFolder);
-
-
-        Thread th = new Thread(new Task<Void>() {
-            @Override
-            protected Void call() throws Exception {
-                loadMovies();
-                return null;
-            }
-        });
-        th.setDaemon(true);
-        th.start();
-
         String fileList = "";
         for (String name: tvFolder.list()){
             fileList += name + "\n";
         }
-
-        addFilter();
-        addColumnFormat();
         txtTv.setText(fileList);
 
     }
 
+    /**
+     * On first run make the user pick the movie folder, then save it to the settings
+     */
+    private void selectMovieFolder(){
+        DirectoryChooser chooser = new DirectoryChooser();
+        chooser.setTitle("Select Movie Folder");
+        movieFolder = chooser.showDialog(null);
+        if(movieFolder!=null){
+            Settings.getInstance().setMovieFolder(movieFolder.getAbsolutePath());
+        }
+    }
+
+    /**
+     * stores the filename, file path, duration and date modified of each video file
+     */
     private void loadMovies() {
         for (File file : movieFiles) {
 
             IContainer container = IContainer.make();
             int result = container.open(file.getAbsolutePath(), IContainer.Type.READ, null);
-            if (result < 0) {
-
-            } else {
-                movieEntries.add(new MovieEntry(file.getName(), file.getAbsolutePath(), formatTime(container.getDuration()), new Date(file.lastModified())));
+            if (result >= 0) {
+                movieEntries.add(new MovieEntry(file.getName(), file.getAbsolutePath(), DateUtils.formatTime(container.getDuration()), new Date(file.lastModified())));
             }
             container.close();
         }
 
-
         tabMovies.setDisable(false);
         txtFilter.setDisable(false);
-        Platform.runLater(() -> lblMovieCount.setText("Number of Movies: " + movieEntries.size()));
+        Platform.runLater(() -> {
+            lblMovieCount.setText("Number of Movies: " + movieEntries.size());
+            progress.setVisible(false);
+        });
     }
 
-
+    /**
+     * Adds the filter function to the list from the text field in the toolbar
+     */
     private void addFilter(){
         FilteredList<MovieEntry> filteredList = new FilteredList<>(movieEntries, p -> true);
 
@@ -124,7 +142,10 @@ public class Controller {
         tableMovies.setItems(sortedList);
     }
 
-    private void addColumnFormat(){
+    /**
+     * format the date column
+     */
+    private void addDateColumnFormat(){
         dateColumn.setCellValueFactory(new Callback<TableColumn.CellDataFeatures<MovieEntry, String>, ObservableValue<String>>() {
             @Override
             public ObservableValue<String> call(TableColumn.CellDataFeatures<MovieEntry, String> param) {
@@ -133,19 +154,25 @@ public class Controller {
         });
     }
 
+    /**
+     * randomly pick a movie and display the filename
+     * @param event
+     */
     @FXML
     protected void onPickPressed(ActionEvent event){
         int index = (int)(Math.random()*movieFolder.list().length);
         lblSelectedMovie.setText(movieFolder.list()[index]);
     }
 
+    /**
+     * at some point this will open the video in the
+     * default media player
+     * @param event
+     */
     @FXML
     protected void onTableCellClicked(MouseEvent event){
         if(event.getClickCount()==2){
             String file = tableMovies.getSelectionModel().getSelectedItem().getFilePath();
-
-
-
 //            try {
 //                Desktop.getDesktop().open(new File(file));
 //            } catch (IOException e) {
@@ -154,6 +181,11 @@ public class Controller {
         }
     }
 
+    /**
+     * Recursively traverse the given folder adding each movie file to a list and returning the list
+     * @param folder
+     * @return
+     */
     private List<File> getMovieFiles(File folder){
         List<File> tmp = new ArrayList<>();
         if(folder.isFile()){
@@ -168,25 +200,17 @@ public class Controller {
         return tmp;
     }
 
+    /**
+     * checks if the given file is a video
+     * @param video
+     * @return
+     */
     private boolean isVideoFile(File video){
         String extension = video.getName().substring(video.getName().lastIndexOf(".")+1);
         String regex = "avi|mp4|mkv";
         return extension.matches(regex);
     }
 
-    private String formatTime(long time){
 
-        //time/=1000;
-        time/=1000000;
-        long second = time%60;
-        time/=60;
-        long minute = time%60;
-        time/=60;
-        long hour = time;
-
-        return ((hour<10)?("0"+hour):hour)+
-                ":"+((minute<10)?("0"+minute):minute)+
-                ":"+((second<10)?("0"+second):second);
-    }
 
 }
