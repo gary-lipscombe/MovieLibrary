@@ -3,7 +3,6 @@ package main.controllers;
 import com.xuggle.xuggler.IContainer;
 import javafx.application.Platform;
 import javafx.beans.property.SimpleStringProperty;
-import javafx.beans.value.ObservableValue;
 import javafx.collections.ObservableList;
 import javafx.collections.transformation.FilteredList;
 import javafx.collections.transformation.SortedList;
@@ -13,7 +12,6 @@ import javafx.fxml.FXML;
 import javafx.scene.control.*;
 import javafx.scene.input.MouseEvent;
 import javafx.stage.DirectoryChooser;
-import javafx.util.Callback;
 import main.model.MovieDatabase;
 import main.model.MovieEntry;
 import main.model.Settings;
@@ -149,7 +147,7 @@ public class Controller {
 
         }));
 
-        SortedList<MovieEntry> sortedList = new SortedList<MovieEntry>(filteredList);
+        SortedList<MovieEntry> sortedList = new SortedList<>(filteredList);
         sortedList.comparatorProperty().bind(tableMovies.comparatorProperty());
         tableMovies.setItems(sortedList);
     }
