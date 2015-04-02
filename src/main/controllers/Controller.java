@@ -14,6 +14,7 @@ import javafx.scene.control.*;
 import javafx.scene.input.MouseEvent;
 import javafx.stage.DirectoryChooser;
 import javafx.util.Callback;
+import main.model.MovieDatabase;
 import main.model.MovieEntry;
 import main.model.Settings;
 import main.utils.DateUtils;
@@ -35,20 +36,22 @@ public class Controller {
     @FXML private ProgressIndicator progress;
 
     private ObservableList<MovieEntry> movieEntries;
+    private MovieDatabase movieDatabase;
 
     private String tvFolderPath = "L:/TV Shows";
     private File tvFolder;
 
-    private String movieFolderPath = "L:/Movies/";
     private File movieFolder;
     private List<File> movieFiles;
 
     @FXML
     protected void initialize(){
-        movieEntries = tableMovies.getItems();
 
-        movieFolderPath = Settings.getInstance().getMovieFolder();
-        if(movieFolderPath==null){
+        String movieFolderPath = Settings.getInstance().getMovieFolder();
+        movieDatabase = MovieDatabase.getDbInstance();
+        tableMovies.setItems(movieDatabase.getMovieEntries());
+        movieEntries = tableMovies.getItems();
+        if(movieFolderPath ==null){
             selectMovieFolder();
         }else {
             movieFolder = new File(movieFolderPath);
@@ -56,14 +59,16 @@ public class Controller {
 
         if(movieFolder!=null) {
             movieFiles = getMovieFiles(movieFolder);
-
+            System.out.println(movieFiles);
             progress.setVisible(true);
 
             // loading the movie durations takes a while, so this is done in a separate thread
             Thread th = new Thread(new Task<Void>() {
                 @Override
                 protected Void call() throws Exception {
+                    System.out.println("starting load");
                     loadMovies();
+                    System.out.println("load finished ");
                     return null;
                 }
             });
@@ -75,12 +80,12 @@ public class Controller {
 
 
         // start of the tv section
-        tvFolder = new File(tvFolderPath);
-        String fileList = "";
-        for (String name: tvFolder.list()){
-            fileList += name + "\n";
-        }
-        txtTv.setText(fileList);
+//        tvFolder = new File(tvFolderPath);
+//        String fileList = "";
+//        for (String name: tvFolder.list()){
+//            fileList += name + "\n";
+//        }
+//        txtTv.setText(fileList);
 
     }
 
@@ -101,20 +106,27 @@ public class Controller {
      */
     private void loadMovies() {
         for (File file : movieFiles) {
+            System.out.println("loading file");
+            Date lastModified = new Date(file.lastModified());
+            MovieEntry movieEntry = movieDatabase.getMovieByFileName(file.getName());
 
-            IContainer container = IContainer.make();
-            int result = container.open(file.getAbsolutePath(), IContainer.Type.READ, null);
-            if (result >= 0) {
-                movieEntries.add(new MovieEntry(file.getName(), file.getAbsolutePath(), DateUtils.formatTime(container.getDuration()), new Date(file.lastModified())));
+            if(!movieDatabase.isMovieInDB(file.getName()) || movieEntry.getDateModified().before(lastModified)) {
+                System.out.println("adding new file ");
+                IContainer container = IContainer.make();
+                int result = container.open(file.getAbsolutePath(), IContainer.Type.READ, null);
+                if (result >= 0) {
+                    movieEntry = new MovieEntry(file.getName(), file.getAbsolutePath(), DateUtils.formatTime(container.getDuration()), lastModified);
+                    movieDatabase.addMovieEntry(movieEntry);
+                }
+                container.close();
             }
-            container.close();
         }
-
         tabMovies.setDisable(false);
         txtFilter.setDisable(false);
         Platform.runLater(() -> {
-            lblMovieCount.setText("Number of Movies: " + movieEntries.size());
+            lblMovieCount.setText("Number of Movies: " + movieDatabase.getMovieEntries().size());
             progress.setVisible(false);
+
         });
     }
 
@@ -146,12 +158,7 @@ public class Controller {
      * format the date column
      */
     private void addDateColumnFormat(){
-        dateColumn.setCellValueFactory(new Callback<TableColumn.CellDataFeatures<MovieEntry, String>, ObservableValue<String>>() {
-            @Override
-            public ObservableValue<String> call(TableColumn.CellDataFeatures<MovieEntry, String> param) {
-                return new SimpleStringProperty(DateUtils.formatDate(param.getValue().getDateModified()));
-            }
-        });
+        dateColumn.setCellValueFactory(param -> new SimpleStringProperty(DateUtils.formatDate(param.getValue().getDateModified())));
     }
 
     /**
@@ -160,8 +167,10 @@ public class Controller {
      */
     @FXML
     protected void onPickPressed(ActionEvent event){
-        int index = (int)(Math.random()*movieFolder.list().length);
-        lblSelectedMovie.setText(movieFolder.list()[index]);
+        if(!movieEntries.isEmpty()) {
+            int index = (int) (Math.random() * movieEntries.size());
+            lblSelectedMovie.setText(movieEntries.get(index).getFileName());
+        }
     }
 
     /**

@@ -34,6 +34,4 @@ public class MovieEntry {
     public Date getDateModified() {
         return dateModified;
     }
-
-
 }
