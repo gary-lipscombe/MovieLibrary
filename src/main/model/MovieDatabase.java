@@ -73,10 +73,10 @@ public class MovieDatabase {
             JSONObject jsonObject = (JSONObject)jsonParser.parse(movieDbString.toString());
             JSONArray jsonArray = (JSONArray)jsonParser.parse(jsonObject.get("movieEntries").toString());
             for (Object aJsonArray : jsonArray) {
+
                 tmp.addMovieEntry(gson.fromJson(aJsonArray.toString(), MovieEntry.class));
             }
-            System.out.println(jsonObject.get("movieEntries").toString());
-            System.out.println(tmp.getMovieEntries().get(0).fileName);
+
         } catch (ParseException e) {
             e.printStackTrace();
         }

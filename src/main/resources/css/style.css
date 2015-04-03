@@ -33,7 +33,23 @@
     -fx-background-color: gray;
 }
 
-.progress{
 
-    -fx-padding:30;
+.grid-pane-details{
+    -fx-border-color:#cecece;
+    -fx-border-width:1;
+    -fx-background-color:#dddddd;
+}
+
+.grid-pane-cell-details{
+
+}
+
+.image-details{
+    -fx-border-color:#cecece;
+    -fx-border-width:1;
+}
+
+.vbox-status{
+    -fx-border-color:#cecece;
+    -fx-border-width:1;
 }

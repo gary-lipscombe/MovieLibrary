@@ -16,8 +16,10 @@ import main.model.MovieDatabase;
 import main.model.MovieEntry;
 import main.model.Settings;
 import main.utils.DateUtils;
+import main.utils.FileUtils;
 
 import java.io.File;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
@@ -32,6 +34,8 @@ public class Controller {
     @FXML private TabPane tabMovies;
     @FXML private TableColumn<MovieEntry,String> dateColumn;
     @FXML private ProgressIndicator progress;
+
+    @FXML private DetailsController panelDetailsController;
 
     private ObservableList<MovieEntry> movieEntries;
     private MovieDatabase movieDatabase;
@@ -57,7 +61,6 @@ public class Controller {
 
         if(movieFolder!=null) {
             movieFiles = getMovieFiles(movieFolder);
-            System.out.println(movieFiles);
             progress.setVisible(true);
 
             // loading the movie durations takes a while, so this is done in a separate thread
@@ -103,13 +106,13 @@ public class Controller {
      * stores the filename, file path, duration and date modified of each video file
      */
     private void loadMovies() {
+        long time = System.currentTimeMillis();
         for (File file : movieFiles) {
-            System.out.println("loading file");
+
             Date lastModified = new Date(file.lastModified());
             MovieEntry movieEntry = movieDatabase.getMovieByFileName(file.getName());
 
-            if(!movieDatabase.isMovieInDB(file.getName()) || movieEntry.getDateModified().before(lastModified)) {
-                System.out.println("adding new file ");
+            if(movieEntry==null) {
                 IContainer container = IContainer.make();
                 int result = container.open(file.getAbsolutePath(), IContainer.Type.READ, null);
                 if (result >= 0) {
@@ -119,6 +122,7 @@ public class Controller {
                 container.close();
             }
         }
+        System.out.println(System.currentTimeMillis()-time);
         tabMovies.setDisable(false);
         txtFilter.setDisable(false);
         Platform.runLater(() -> {
@@ -168,6 +172,9 @@ public class Controller {
         if(!movieEntries.isEmpty()) {
             int index = (int) (Math.random() * movieEntries.size());
             lblSelectedMovie.setText(movieEntries.get(index).getFileName());
+            tableMovies.getSelectionModel().select(movieEntries.get(index));
+            tableMovies.scrollTo(movieEntries.get(index));
+            panelDetailsController.setMovieEntry(tableMovies.getSelectionModel().getSelectedItem());
         }
     }
 
@@ -180,11 +187,18 @@ public class Controller {
     protected void onTableCellClicked(MouseEvent event){
         if(event.getClickCount()==2){
             String file = tableMovies.getSelectionModel().getSelectedItem().getFilePath();
+            try {
+                Runtime.getRuntime().exec("explorer.exe /select,"+file);
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
 //            try {
 //                Desktop.getDesktop().open(new File(file));
 //            } catch (IOException e) {
 //                e.printStackTrace();
 //            }
+        }else{
+            panelDetailsController.setMovieEntry(tableMovies.getSelectionModel().getSelectedItem());
         }
     }
 
