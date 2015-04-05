@@ -185,9 +185,10 @@ public class Controller {
      */
     @FXML
     protected void onTableCellClicked(MouseEvent event){
+        MovieEntry selectedMovie = tableMovies.getSelectionModel().getSelectedItem();
         if(event.getClickCount()==2){
-            String file = tableMovies.getSelectionModel().getSelectedItem().getFilePath();
-            try {
+            String file = selectedMovie.getFilePath();
+                try {
                 Runtime.getRuntime().exec("explorer.exe /select,"+file);
             } catch (IOException e) {
                 e.printStackTrace();
@@ -198,7 +199,10 @@ public class Controller {
 //                e.printStackTrace();
 //            }
         }else{
-            panelDetailsController.setMovieEntry(tableMovies.getSelectionModel().getSelectedItem());
+            if(!selectedMovie.hasImdbData()){
+
+            }
+            panelDetailsController.setMovieEntry(selectedMovie);
         }
     }
 

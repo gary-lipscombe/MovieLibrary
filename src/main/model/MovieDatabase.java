@@ -40,14 +40,13 @@ public class MovieDatabase {
             this.movieEntries.add(movieEntry);
             saveDatabase();
         }
-
     }
 
     public ObservableList<MovieEntry> getMovieEntries() {
         return movieEntries;
     }
 
-    private void saveDatabase(){
+    public void saveDatabase(){
 
         Gson gson = new Gson();
         String json = gson.toJson(this);
